@@ -1,0 +1,53 @@
+<Window x:Class="NetwatchPro.ScreensaverWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:NetwatchPro.Controls"
+        WindowStyle="None" WindowState="Maximized" ResizeMode="NoResize"
+        Topmost="True" ShowInTaskbar="False" Cursor="None"
+        Background="#06080E" FontFamily="{StaticResource FontMono}"
+        Loaded="OnLoaded" KeyDown="OnKeyDown">
+    <Grid>
+        <Grid x:Name="LayoutNetwork">
+            <controls:WorldMap ItemsSource="{Binding Flows}" Zoom="1.0"/>
+        </Grid>
+
+        <Grid x:Name="LayoutScope">
+            <controls:Oscilloscope/>
+        </Grid>
+
+        <Grid x:Name="LayoutTelemetry">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <controls:AnalogGauge Width="230" Height="200" Value="{Binding CpuUsage}" Minimum="0" Maximum="100" Title="CPU" Unit="%" Accent="#26D3E8"/>
+                <controls:AnalogGauge Width="230" Height="200" Value="{Binding RamUsage}" Minimum="0" Maximum="100" Title="RAM" Unit="%" Accent="#5CFF6A" Margin="30,0,0,0"/>
+                <controls:AnalogGauge Width="230" Height="200" Value="{Binding DiskUsage}" Minimum="0" Maximum="100" Title="DISK" Unit="%" Accent="#FFB000" Margin="30,0,0,0"/>
+            </StackPanel>
+            <TextBlock x:Name="ClockText" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10"
+                       FontFamily="{StaticResource FontHead}" FontSize="56" Foreground="#26D3E8"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource Value}" Text="RX" Foreground="#5CFF6A" FontSize="18"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding NetRxText}" Foreground="#5CFF6A" FontSize="18" Margin="8,0,30,0"/>
+                <TextBlock Style="{StaticResource Value}" Text="TX" Foreground="#FFB000" FontSize="18"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding NetTxText}" Foreground="#FFB000" FontSize="18" Margin="8,0,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="LayoutMatrix">
+            <controls:TrafficMatrix/>
+        </Grid>
+
+        <Grid x:Name="LayoutWfp">
+            <controls:WfpRings ItemsSource="{Binding WfpLayers}"/>
+        </Grid>
+
+        <Border x:Name="BrightnessOverlay" Background="#000000" Opacity="0" IsHitTestVisible="False"/>
+
+        <TextBlock x:Name="Hint" Text="ESC EXIT  ·  1–5 LAYOUTS  ·  ↑↓ BRIGHTNESS"
+                   Foreground="#3A4458" FontSize="10" HorizontalAlignment="Center"
+                   VerticalAlignment="Bottom" Margin="0,0,0,20"/>
+    </Grid>
+</Window>

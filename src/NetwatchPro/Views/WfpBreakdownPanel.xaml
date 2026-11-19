@@ -1,0 +1,49 @@
+<UserControl x:Class="NetwatchPro.Views.WfpBreakdownPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:NetwatchPro.Controls">
+    <controls:PanelFrame Header="WFP BREAKDOWN" Accent="#FF8C2E">
+        <Grid Margin="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Background="#0E1119" BorderBrush="#2A3242" BorderThickness="1" Padding="6,4" Margin="0,0,0,4">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="OBSERVED EVENTS BY FILTERING LAYER"/>
+                    <ItemsControl ItemsSource="{Binding WfpLayers}" Margin="0,3,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="60"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource Value}" Text="{Binding Name}" FontSize="9"/>
+                                    <controls:BarMeter Grid.Column="1" Height="8" Value="{Binding EventCount}" Minimum="0" Maximum="2500" Segments="24" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Text="{Binding EventCount}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <DataGrid Grid.Row="1" ItemsSource="{Binding WfpObjects}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="KIND" Binding="{Binding KindLabel}" Width="80"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                    <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="150"/>
+                    <DataGridTextColumn Header="PROVIDER" Binding="{Binding Provider}" Width="120"/>
+                    <DataGridTextColumn Header="SUBLAYER" Binding="{Binding Sublayer}" Width="110"/>
+                    <DataGridTextColumn Header="LAYER" Binding="{Binding Layer}" Width="150"/>
+                    <DataGridTextColumn Header="ACTION" Binding="{Binding Action}" Width="70"/>
+                    <DataGridTextColumn Header="CALLOUT" Binding="{Binding Callout}" Width="110"/>
+                    <DataGridTextColumn Header="EVENTS" Binding="{Binding EventsText}" Width="190"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </controls:PanelFrame>
+</UserControl>

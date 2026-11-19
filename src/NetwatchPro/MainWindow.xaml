@@ -1,0 +1,293 @@
+<Window x:Class="NetwatchPro.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:NetwatchPro.Controls"
+        xmlns:views="clr-namespace:NetwatchPro.Views"
+        xmlns:models="clr-namespace:NetwatchPro.Models"
+        Title="NETWATCH PRO — REAL-TIME NETWORK DIAGNOSTICS"
+        Width="1600" Height="900" WindowState="Maximized"
+        Background="{StaticResource BgBrush}"
+        FontFamily="{StaticResource FontMono}"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= TOP CONTROL PANEL ================= -->
+        <Border Grid.Row="0" Background="{StaticResource ChassisBrush}" Padding="1">
+            <Border Background="#0A0B10" Padding="8,4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="NETWATCH PRO" FontFamily="{StaticResource FontHead}" FontSize="24"
+                                       FontWeight="Bold" Foreground="{StaticResource CyanBrush}"/>
+                            <TextBlock Text="REAL-TIME NETWORK DIAGNOSTICS" Style="{StaticResource Faint}"
+                                       VerticalAlignment="Bottom" Margin="10,0,0,4" FontSize="10"/>
+                            <Border Background="#1A1414" BorderBrush="#3A4458" BorderThickness="1" CornerRadius="2"
+                                    Padding="7,2" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="SIMULATED DATA" Foreground="#FF8C2E" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <controls:LedIndicator Width="9" Height="9" IsOn="{Binding IsHealthy}" Color="#5CFF6A" VerticalAlignment="Center"/>
+                            <controls:LedIndicator Width="9" Height="9" IsOn="{Binding IsDegraded}" Color="#FF3B4E" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                            <TextBlock Text="{Binding OverallHealth}" Style="{StaticResource Value}" Margin="5,0,12,0" VerticalAlignment="Center" FontSize="10"/>
+                            <controls:LedIndicator Width="9" Height="9" IsOn="{Binding IsLive}" Color="#26D3E8" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding LivePaused}" Style="{StaticResource Value}" Foreground="#26D3E8" Margin="5,0,12,0" VerticalAlignment="Center" FontSize="10"/>
+                            <TextBlock Text="{Binding ModeLabel}" Style="{StaticResource Value}" Foreground="#FFB000" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="10"/>
+                            <TextBlock Text="{Binding TimeDate}" Style="{StaticResource Value}" VerticalAlignment="Center" FontSize="10"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource NavButton}" Content="OVERVIEW"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="OVERVIEW">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="OVERVIEW"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="TRAFFIC"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="TRAFFIC">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="TRAFFIC"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="DRIVERS"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="DRIVERS">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="DRIVERS"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="WFP"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="WFP">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="WFP"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="CONNECTIONS"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="CONNECTIONS">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="CONNECTIONS"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="ISSUES"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="ISSUES">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="ISSUES"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="ANALYSIS"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="ANALYSIS">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="ANALYSIS"/>
+                                </Button.Foreground>
+                            </Button>
+                            <Button Style="{StaticResource NavButton}" Content="SETTINGS"
+                                    Command="{Binding SetSectionCommand}" CommandParameter="SETTINGS">
+                                <Button.Foreground>
+                                    <Binding Path="SelectedSection" Converter="{StaticResource SectionBrush}" ConverterParameter="SETTINGS"/>
+                                </Button.Foreground>
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource Faint}" Text="{Binding ComputerName}" Margin="0,0,8,0"/>
+                            <TextBlock Style="{StaticResource Faint}" Text="{Binding WinVersion}" Margin="0,0,8,0"/>
+                            <TextBlock Style="{StaticResource Faint}" Text="{Binding WinBuild}" Margin="0,0,8,0"/>
+                            <TextBlock Style="{StaticResource Faint}" Text="{Binding Architecture}"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- ================= CONTENT ================= -->
+        <Grid Grid.Row="1">
+
+            <!-- OVERVIEW dashboard -->
+            <Grid Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=OVERVIEW}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1.4*"/>
+                    <ColumnDefinition Width="0.95*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="1.1*"/>
+                    <RowDefinition Height="0.85*"/>
+                </Grid.RowDefinitions>
+
+                <views:SystemOverviewPanel Grid.Row="0" Grid.Column="0" Margin="3"/>
+                <views:NetworkTrafficPanel Grid.Row="0" Grid.Column="1" Margin="3"/>
+                <views:WfpBreakdownPanel Grid.Row="0" Grid.Column="2" Margin="3"/>
+
+                <views:DriversDestinationsPanel Grid.Row="1" Grid.Column="0" Margin="3"/>
+                <views:WorldMapPanel Grid.Row="1" Grid.Column="1" Margin="3"/>
+                <views:LiveMetricsPanel Grid.Row="1" Grid.Column="2" Margin="3"/>
+
+                <views:FlowAttributionPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="3"/>
+                <views:IssuesEventsPanel Grid.Row="2" Grid.Column="2" Margin="3"/>
+            </Grid>
+
+            <!-- focused sections -->
+            <views:NetworkTrafficPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=TRAFFIC}"/>
+            <views:DriversDestinationsPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=DRIVERS}"/>
+            <views:WfpBreakdownPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=WFP}"/>
+            <views:FlowAttributionPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=CONNECTIONS}"/>
+            <views:IssuesEventsPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=ISSUES}"/>
+
+            <Grid Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=ANALYSIS}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0.9*"/>
+                    <RowDefinition Height="1.1*"/>
+                </Grid.RowDefinitions>
+                <views:DriverStackPanel Grid.Row="0" Margin="3"/>
+                <views:NetworkInterfacesPanel Grid.Row="1" Margin="3"/>
+            </Grid>
+
+            <views:SettingsPanel Visibility="{Binding SelectedSection, Converter={StaticResource SectionVis}, ConverterParameter=SETTINGS}"/>
+        </Grid>
+
+        <!-- ================= BOTTOM HARDWARE CONTROL STRIP ================= -->
+        <Border Grid.Row="2" Background="{StaticResource ChassisBrush}" Padding="1">
+            <Grid Background="#0A0B10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="10,6" HorizontalAlignment="Center">
+
+                    <!-- MODE SELECT -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="MODE SELECT"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <controls:PushButton Text="LIGHT" Width="64" Height="26"
+                                                 IsActive="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=LightMonitor}"
+                                                 Command="{Binding SetModeCommand}" CommandParameter="{x:Static models:OperatingMode.LightMonitor}"
+                                                 Accent="#5CFF6A" ToolTip="Light Monitor — low overhead, always-on"/>
+                            <controls:PushButton Text="DIAG" Width="64" Height="26" Margin="4,0,0,0"
+                                                 IsActive="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=FullDiagnostics}"
+                                                 Command="{Binding SetModeCommand}" CommandParameter="{x:Static models:OperatingMode.FullDiagnostics}"
+                                                 Accent="#26D3E8" ToolTip="Full Diagnostics — deep WFP/ETW enumeration"/>
+                            <controls:PushButton Text="CAPTURE" Width="64" Height="26" Margin="4,0,0,0"
+                                                 IsActive="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=CaptureMode}"
+                                                 Command="{Binding SetModeCommand}" CommandParameter="{x:Static models:OperatingMode.CaptureMode}"
+                                                 Accent="#FF8C2E" ToolTip="Capture Mode — explicit packet capture"/>
+                            <controls:PushButton Text="SAVER" Width="64" Height="26" Margin="4,0,0,0"
+                                                 IsActive="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=Screensaver}"
+                                                 Command="{Binding SetModeCommand}" CommandParameter="{x:Static models:OperatingMode.Screensaver}"
+                                                 Accent="#A78BFA" ToolTip="Screensaver — full-screen presentation"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- TIME RANGE -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="TIME RANGE"/>
+                        <controls:RotaryKnob Width="54" Height="54" Value="{Binding TimeRangeIndex}" Minimum="0" Maximum="6" Steps="7"
+                                             DisplayText="{Binding TimeRangeLabel}" Accent="#26D3E8"/>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- REFRESH RATE -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="REFRESH"/>
+                        <controls:RotaryKnob Width="54" Height="54" Value="{Binding RefreshRateIndex}" Minimum="0" Maximum="4" Steps="5"
+                                             DisplayText="{Binding RefreshRateLabel}" Accent="#26D3E8"/>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- TRAFFIC FILTER -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="TRAFFIC FILTER"/>
+                        <controls:RotaryKnob Width="54" Height="54" Value="{Binding TrafficFilterIndex}" Minimum="0" Maximum="4" Steps="5"
+                                             DisplayText="{Binding TrafficFilterLabel}" Accent="#FFB000"/>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- ZOOM -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="ZOOM"/>
+                        <controls:RotaryKnob Width="62" Height="62" Value="{Binding ZoomLevel}" Minimum="0.5" Maximum="4.0" Unit="x" Accent="#A78BFA"/>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- THRESHOLDS -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="THRESHOLDS"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <StackPanel>
+                                <controls:RotaryKnob Width="48" Height="48" Value="{Binding CpuThreshold}" Minimum="20" Maximum="100" Unit="%" Accent="#5CFF6A"/>
+                                <TextBlock Style="{StaticResource Faint}" Text="CPU" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Margin="6,0,0,0">
+                                <controls:RotaryKnob Width="48" Height="48" Value="{Binding LatencyThreshold}" Minimum="20" Maximum="500" Unit="ms" Accent="#FFB000"/>
+                                <TextBlock Style="{StaticResource Faint}" Text="LAT" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Margin="6,0,0,0">
+                                <controls:RotaryKnob Width="48" Height="48" Value="{Binding PacketLossThreshold}" Minimum="0.5" Maximum="10" Unit="%" Accent="#FF3B4E"/>
+                                <TextBlock Style="{StaticResource Faint}" Text="LOSS" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- CAPTURE -->
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource Label}" Text="CAPTURE CONTROL"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <controls:PushButton Text="START" Width="54" Height="24"
+                                                 IsActive="{Binding IsCapturing}"
+                                                 Command="{Binding StartCaptureCommand}" Accent="#5CFF6A"/>
+                            <controls:PushButton Text="STOP" Width="54" Height="24" Margin="4,0,0,0"
+                                                 Command="{Binding StopCaptureCommand}" Accent="#FF3B4E"/>
+                            <controls:PushButton Text="EXPORT" Width="58" Height="24" Margin="4,0,0,0"
+                                                 Command="{Binding ExportCaptureCommand}" Accent="#26D3E8"/>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Faint}" Text="{Binding CaptureStatus}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Border Width="1" Background="#2A3242" Margin="2,0,14,0"/>
+
+                    <!-- ALERTS -->
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="ALERTS"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0" VerticalAlignment="Center">
+                            <controls:LedIndicator Width="12" Height="12" IsOn="{Binding AlertActive}" Color="#FF3B4E"/>
+                            <TextBlock Text="{Binding AlertCount}" Style="{StaticResource Value}" FontSize="16" Foreground="#FF3B4E" Margin="6,0,0,0"/>
+                            <controls:PushButton Text="ACK" Width="40" Height="22" Margin="8,0,0,0"
+                                                 Command="{Binding AcknowledgeAlertsCommand}" Accent="#FFB000"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

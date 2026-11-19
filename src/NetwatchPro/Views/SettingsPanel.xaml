@@ -1,0 +1,109 @@
+<UserControl x:Class="NetwatchPro.Views.SettingsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:NetwatchPro.Controls">
+    <controls:PanelFrame Header="SETTINGS" Accent="#A78BFA">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- operating mode -->
+                <StackPanel>
+                    <TextBlock Style="{StaticResource H2}" Text="OPERATING MODE"/>
+                    <RadioButton Content="LIGHT MONITOR (default)" IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=LightMonitor}" Margin="0,4,0,0"/>
+                    <RadioButton Content="FULL DIAGNOSTICS" IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=FullDiagnostics}" Margin="0,3,0,0"/>
+                    <RadioButton Content="CAPTURE MODE" IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=CaptureMode}" Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- refresh rate -->
+                <StackPanel Grid.Column="1">
+                    <TextBlock Style="{StaticResource H2}" Text="REFRESH RATE"/>
+                    <RadioButton Content="1 SECOND" IsChecked="{Binding RefreshRateIndex, Converter={StaticResource Equals}, ConverterParameter=0}" Margin="0,4,0,0"/>
+                    <RadioButton Content="5 SECONDS" IsChecked="{Binding RefreshRateIndex, Converter={StaticResource Equals}, ConverterParameter=1}" Margin="0,3,0,0"/>
+                    <RadioButton Content="10 SECONDS" IsChecked="{Binding RefreshRateIndex, Converter={StaticResource Equals}, ConverterParameter=2}" Margin="0,3,0,0"/>
+                    <RadioButton Content="30 SECONDS" IsChecked="{Binding RefreshRateIndex, Converter={StaticResource Equals}, ConverterParameter=3}" Margin="0,3,0,0"/>
+                    <RadioButton Content="MANUAL" IsChecked="{Binding RefreshRateIndex, Converter={StaticResource Equals}, ConverterParameter=4}" Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- thresholds -->
+                <StackPanel Grid.Row="1" Margin="0,12,0,0">
+                    <TextBlock Style="{StaticResource H2}" Text="ALERT THRESHOLDS"/>
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Label}" Text="CPU %"/>
+                            <controls:RotaryKnob Width="62" Height="62" Value="{Binding CpuThreshold}" Minimum="20" Maximum="100"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <TextBlock Style="{StaticResource Label}" Text="LATENCY ms"/>
+                            <controls:RotaryKnob Width="62" Height="62" Value="{Binding LatencyThreshold}" Minimum="20" Maximum="500"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="12,0,0,0">
+                            <TextBlock Style="{StaticResource Label}" Text="LOSS %"/>
+                            <controls:RotaryKnob Width="62" Height="62" Value="{Binding PacketLossThreshold}" Minimum="0.5" Maximum="10"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- traffic series -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,12,0,0">
+                    <TextBlock Style="{StaticResource H2}" Text="TRAFFIC SERIES"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <controls:ToggleSwitch Width="30" Height="16" IsChecked="{Binding ShowPrivate}" Accent="#A78BFA"/>
+                        <TextBlock Style="{StaticResource Value}" Text="PRIVATE/TUNNEL" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                        <controls:ToggleSwitch Width="30" Height="16" IsChecked="{Binding ShowProxy}" Accent="#FFB000"/>
+                        <TextBlock Style="{StaticResource Value}" Text="WEB PROXY/SWG" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                        <controls:ToggleSwitch Width="30" Height="16" IsChecked="{Binding ShowDirect}" Accent="#26D3E8"/>
+                        <TextBlock Style="{StaticResource Value}" Text="DIRECT INTERNET" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                        <controls:ToggleSwitch Width="30" Height="16" IsChecked="{Binding ShowOther}" Accent="#6B7A8F"/>
+                        <TextBlock Style="{StaticResource Value}" Text="OTHER/UNKNOWN" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- behaviour -->
+                <StackPanel Grid.Row="2" Margin="0,12,0,0" Grid.ColumnSpan="2">
+                    <TextBlock Style="{StaticResource H2}" Text="BEHAVIOUR &amp; PRIVACY"/>
+                    <CheckBox Content="SOUND EFFECTS (disabled by default)" IsChecked="{Binding SoundEnabled}" Margin="0,4,0,0"/>
+                    <CheckBox Content="START IN LIGHT MONITOR" IsChecked="{Binding StartInLightMonitor}" Margin="0,3,0,0"/>
+                    <CheckBox Content="AUTO-CLEANUP OLD CAPTURE FILES" IsChecked="{Binding CaptureAutoCleanup}" Margin="0,3,0,0"/>
+                    <TextBlock Style="{StaticResource Faint}" Text="Telemetry never leaves this device. All capture is explicit, bounded and user-controlled." Margin="0,6,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- classification -->
+                <StackPanel Grid.Row="3" Margin="0,12,0,0" Grid.ColumnSpan="2">
+                    <TextBlock Style="{StaticResource H2}" Text="TRAFFIC CLASSIFICATION (USER-CONFIGURABLE)"/>
+                    <TextBlock Style="{StaticResource Faint}" Text="Vendor-neutral rules. Milestone 1 ships example mappings only — no vendor logic is hardcoded into the core." TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Ellipse Width="9" Height="9" Fill="#A78BFA" VerticalAlignment="Center"/>
+                        <TextBlock Style="{StaticResource Value}" Text="PRIVATE/TUNNEL" Margin="5,0,16,0" VerticalAlignment="Center" FontSize="10"/>
+                        <Ellipse Width="9" Height="9" Fill="#FFB000" VerticalAlignment="Center"/>
+                        <TextBlock Style="{StaticResource Value}" Text="WEB PROXY/SWG" Margin="5,0,16,0" VerticalAlignment="Center" FontSize="10"/>
+                        <Ellipse Width="9" Height="9" Fill="#26D3E8" VerticalAlignment="Center"/>
+                        <TextBlock Style="{StaticResource Value}" Text="DIRECT INTERNET" Margin="5,0,16,0" VerticalAlignment="Center" FontSize="10"/>
+                        <Ellipse Width="9" Height="9" Fill="#6B7A8F" VerticalAlignment="Center"/>
+                        <TextBlock Style="{StaticResource Value}" Text="OTHER/UNKNOWN" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </controls:PanelFrame>
+</UserControl>

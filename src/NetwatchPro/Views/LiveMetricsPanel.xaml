@@ -1,0 +1,77 @@
+<UserControl x:Class="NetwatchPro.Views.LiveMetricsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:NetwatchPro.Controls">
+    <controls:PanelFrame Header="LIVE METRICS" Accent="#5CFF6A">
+        <Grid Margin="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="AVG LATENCY"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding AvgLatencyText}" FontSize="15" Foreground="#5CFF6A"/>
+                <TextBlock Style="{StaticResource Label}" Text="MAX LATENCY"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding MaxLatencyText}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+                <TextBlock Style="{StaticResource Label}" Text="JITTER"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding JitterText}" FontSize="15" Foreground="#FFB000"/>
+                <TextBlock Style="{StaticResource Label}" Text="PACKET LOSS"/>
+                <TextBlock Style="{StaticResource Value}" Text="{Binding PacketLossText}"/>
+            </StackPanel>
+
+            <Grid Grid.Row="1" Margin="0,8,0,0" Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="DNS RESOLVE"/>
+                    <TextBlock Style="{StaticResource Value}" Text="{Binding DnsTimeText}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Style="{StaticResource Label}" Text="CONN ESTAB"/>
+                    <TextBlock Style="{StaticResource Value}" Text="{Binding ConnEstText}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Style="{StaticResource Label}" Text="AVAILABILITY"/>
+                    <TextBlock Style="{StaticResource Value}" Text="{Binding AvailabilityText}"/>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                <TextBlock Style="{StaticResource Label}" Text="LATENCY (ms)"/>
+                <controls:Sparkline Height="34" ItemsSource="{Binding LatencyHistory}" Accent="#5CFF6A"/>
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,8,0,0">
+                <TextBlock Style="{StaticResource Label}" Text="PACKET LOSS (%)"/>
+                <controls:Sparkline Height="34" ItemsSource="{Binding LatencyHistory}" ValuePath="PacketLoss" Accent="#FFB000"/>
+            </StackPanel>
+
+            <Grid Grid.Row="3" Margin="0,10,0,0" Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="LATENCY THRESHOLD"/>
+                    <TextBlock Style="{StaticResource Value}" Text="{Binding LatencyThreshold, StringFormat={}{0:F0} ms}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Style="{StaticResource Label}" Text="LOSS THRESHOLD"/>
+                    <TextBlock Style="{StaticResource Value}" Text="{Binding PacketLossThreshold, StringFormat={}{0:F1}%}"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </controls:PanelFrame>
+</UserControl>
