@@ -1,0 +1,20 @@
+{
+  "agents": [
+    { "name": "Global Secure Access Client", "vendor": "Microsoft", "type": "VpnClient", "patterns": ["gsaclient", "globalsecureaccess", "msgsa", "gsacallout"] },
+    { "name": "Zscaler Client Connector", "vendor": "Zscaler", "type": "VpnClient", "patterns": ["zscaler", "zsatunnel", "zstunnel", "zscalertray"] },
+    { "name": "Cisco Umbrella Roaming Client", "vendor": "Cisco", "type": "ProxyService", "patterns": ["umbrella", "erproxy", "dnscryptproxy"] },
+    { "name": "Cisco Secure Client (AnyConnect)", "vendor": "Cisco", "type": "VpnClient", "patterns": ["vpnagent", "csc_", "anyconnect", "secureclient"] },
+    { "name": "Netskope Client", "vendor": "Netskope", "type": "ProxyService", "patterns": ["netskope", "nssvc", "stagent"] },
+    { "name": "Palo Alto GlobalProtect", "vendor": "Palo Alto", "type": "VpnClient", "patterns": ["globalprotect", "pangpa", "pangps"] },
+    { "name": "FortiClient", "vendor": "Fortinet", "type": "VpnClient", "patterns": ["forticlient", "fortitray", "fortifw", "fmon"] },
+    { "name": "Kaspersky Network Filter", "vendor": "Kaspersky", "type": "NdisFilter", "patterns": ["kaspersky", "klwfp", "klim", "klif"] },
+    { "name": "ESET Network Filter", "vendor": "ESET", "type": "NdisFilter", "patterns": ["eset", "eamonm", "epfwwfp"] },
+    { "name": "Symantec Endpoint Protection", "vendor": "Broadcom", "type": "NdisFilter", "patterns": ["symantec", "syman", "sepfw"] },
+    { "name": "Cloudflare WARP", "vendor": "Cloudflare", "type": "VpnClient", "patterns": ["cloudflare", "warp", "cfwarp"] },
+    { "name": "Tailscale", "vendor": "Tailscale", "type": "VpnClient", "patterns": ["tailscale", "tailscaled"] },
+    { "name": "WireGuard", "vendor": "WireGuard", "type": "VpnClient", "patterns": ["wireguard"] },
+    { "name": "OpenVPN", "vendor": "OpenVPN", "type": "VpnClient", "patterns": ["openvpn"] },
+    { "name": "NordVPN", "vendor": "Nord Security", "type": "VpnClient", "patterns": ["nordvpn", "nordsec"] },
+    { "name": "ExpressVPN", "vendor": "ExpressVPN", "type": "VpnClient", "patterns": ["expressvpn"] }
+  ]
+}

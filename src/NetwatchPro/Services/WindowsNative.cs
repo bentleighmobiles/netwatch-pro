@@ -48,6 +48,7 @@ internal static class WindowsNative
 
     // ---------------- TCP (GetExtendedTcpTable) ----------------
     internal const int AfInet = 2;
+    internal const int AfInet6 = 23;
     internal const int TcpTableOwnerPidAll = 5;
     internal const uint TcpStateListen = 2;
     internal const uint TcpStateEstablished = 5;
@@ -66,6 +67,19 @@ internal static class WindowsNative
     [DllImport("iphlpapi.dll", SetLastError = true)]
     internal static extern uint GetExtendedTcpTable(
         IntPtr pTcpTable, ref int size, bool order, int af, int tableClass, int reserved);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Tcp6RowOwnerPid
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] public byte[] LocalAddr;
+        public uint LocalScopeId;
+        public uint LocalPort;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] public byte[] RemoteAddr;
+        public uint RemoteScopeId;
+        public uint RemotePort;
+        public uint State;
+        public uint OwningPid;
+    }
 
     // ---------------- UDP (GetExtendedUdpTable) ----------------
     internal const int UdpTableOwnerPid = 1;

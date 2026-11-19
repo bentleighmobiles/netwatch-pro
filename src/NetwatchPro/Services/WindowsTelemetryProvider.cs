@@ -51,6 +51,7 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
     private IPAddress? _probeTarget;
 
     private bool _cpuAlert, _latAlert, _lossAlert;
+    private IReadOnlyList<AgentSignature>? _agents;
 
     public SourceState Source => SourceState.Live;
 
@@ -72,6 +73,8 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
         TryRun(CollectTraffic, "interface throughput");
         TryRun(CollectProcesses, "process inventory");
         TryRun(CollectConnections, "connection tables");
+        TryRun(CollectComponents, "driver/agent inventory");
+        TryRun(CollectWfp, "WFP inventory");
         TryRun(CollectProbes, "network probes");
         _vm.GlobalSource = SourceState.Live;
         ApplyInterval();
@@ -124,6 +127,8 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
         TryRun(CollectTraffic, "interface throughput");
         if (_tick % TicksPerConnections == 0) TryRun(CollectConnections, "connection tables");
         if (_tick % TicksPerProcesses == 0) TryRun(CollectProcesses, "process inventory");
+        if (_tick % 120 == 0) TryRun(CollectComponents, "driver/agent inventory");
+        if (_tick % 300 == 0) TryRun(CollectWfp, "WFP inventory");
         if (_tick % TicksPerProbe == 0) TryRun(CollectProbes, "network probes");
         UpdateHealth();
     }
@@ -229,7 +234,12 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
                     _addrToKind[ipv4] = kind;
                 }
                 var v6 = ip.UnicastAddresses.FirstOrDefault(a => a.Address.AddressFamily == AddressFamily.InterNetworkV6);
-                if (v6 != null) ipv6 = v6.Address.ToString();
+                if (v6 != null)
+                {
+                    ipv6 = v6.Address.ToString();
+                    _addrToInterface[ipv6] = ni.Name;
+                    _addrToKind[ipv6] = kind;
+                }
                 var g = ip.GatewayAddresses.FirstOrDefault();
                 if (g != null) gw = g.Address.ToString();
                 dns = string.Join(", ", ip.DnsAddresses.Select(a => a.ToString()));
@@ -392,6 +402,17 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
 
         try
         {
+            foreach (var r in ReadTcp6Table())
+            {
+                if (r.State != WindowsNative.TcpStateEstablished && r.State != WindowsNative.TcpStateListen) continue;
+                var f = BuildFlow6(r);
+                if (f != null) flows.Add(f);
+            }
+        }
+        catch (Exception ex) { AddEvent(Severity.Warning, "COLLECTOR", "TCP6 table unavailable: " + ex.Message, "", ""); }
+
+        try
+        {
             foreach (var u in ReadUdpTable())
             {
                 var f = BuildFlow(u.LocalAddr, u.LocalPort, 0, 0, "UDP", 0, u.OwningPid);
@@ -404,16 +425,10 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
             _vm.Flows.Add(f);
     }
 
-    private Flow? BuildFlow(uint localAddr, uint localPort, uint remoteAddr, uint remotePort, string proto, uint tcpState, uint pid)
+    private Flow? MakeFlow(IPAddress localIp, IPAddress remoteIp, int lport, int rport, string proto, uint tcpState, uint pid)
     {
-        var localIp = ToIp(localAddr);
-        var remoteIp = ToIp(remoteAddr);
-        int lport = ToPort(localPort);
-        int rport = ToPort(remotePort);
-
         bool isUdp = proto == "UDP";
         bool isLoopback = IPAddress.IsLoopback(localIp) || (!isUdp && IPAddress.IsLoopback(remoteIp));
-        bool wildcard = isUdp && localAddr == 0;
 
         string ifName = _addrToInterface.TryGetValue(localIp.ToString(), out var nm) ? nm : "—";
         InterfaceKind kind = _addrToKind.TryGetValue(localIp.ToString(), out var k) ? k : InterfaceKind.Physical;
@@ -427,8 +442,9 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
             category = TrafficCategory.OtherUnknown;
             confidence = ConfidenceLevel.Confirmed;
         }
-        else if (wildcard)
+        else if (isUdp)
         {
+            // UDP table has no remote — direction/route genuinely unknown
             route = "—";
             category = TrafficCategory.OtherUnknown;
             confidence = ConfidenceLevel.Unknown;
@@ -452,10 +468,12 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
             confidence = ConfidenceLevel.Inferred;
         }
 
+        string procName = _pidName.TryGetValue((int)pid, out var pn) ? pn : GetProcessName((int)pid);
+
         return new Flow
         {
             ProcessId = (int)pid,
-            ProcessName = _pidName.TryGetValue((int)pid, out var pn) ? pn : GetProcessName((int)pid),
+            ProcessName = procName,
             LocalEndpoint = $"{localIp}:{lport}",
             RemoteEndpoint = isUdp ? "—" : $"{remoteIp}:{rport}",
             DestinationIp = isUdp ? "—" : remoteIp.ToString(),
@@ -466,7 +484,7 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
             InterfaceName = ifName,
             Route = route,
             Category = category,
-            Component = "",
+            Component = AgentFor(procName),
             WfpLayer = "",
             Driver = "",
             Confidence = confidence,
@@ -474,6 +492,12 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
             TxRate = 0,
         };
     }
+
+    private Flow? BuildFlow(uint localAddr, uint localPort, uint remoteAddr, uint remotePort, string proto, uint tcpState, uint pid)
+        => MakeFlow(ToIp(localAddr), ToIp(remoteAddr), ToPort(localPort), ToPort(remotePort), proto, tcpState, pid);
+
+    private Flow? BuildFlow6(WindowsNative.Tcp6RowOwnerPid r)
+        => MakeFlow(new IPAddress(r.LocalAddr), new IPAddress(r.RemoteAddr), ToPort(r.LocalPort), ToPort(r.RemotePort), "TCP", r.State, r.OwningPid);
 
     private static List<WindowsNative.TcpRowOwnerPid> ReadTcpTable()
     {
@@ -515,6 +539,209 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
         }
         finally { Marshal.FreeHGlobal(buf); }
         return rows;
+    }
+
+    private static List<WindowsNative.Tcp6RowOwnerPid> ReadTcp6Table()
+    {
+        var rows = new List<WindowsNative.Tcp6RowOwnerPid>();
+        int size = 0;
+        uint ret = WindowsNative.GetExtendedTcpTable(IntPtr.Zero, ref size, false, WindowsNative.AfInet6, WindowsNative.TcpTableOwnerPidAll, 0);
+        if (ret != 122 /* ERROR_INSUFFICIENT_BUFFER */ || size <= 0) return rows;
+
+        IntPtr buf = Marshal.AllocHGlobal(size);
+        try
+        {
+            ret = WindowsNative.GetExtendedTcpTable(buf, ref size, false, WindowsNative.AfInet6, WindowsNative.TcpTableOwnerPidAll, 0);
+            if (ret != 0) return rows;
+            uint count = (uint)Marshal.ReadInt32(buf);
+            int rowSize = Marshal.SizeOf<WindowsNative.Tcp6RowOwnerPid>();
+            for (uint i = 0; i < count; i++)
+                rows.Add(Marshal.PtrToStructure<WindowsNative.Tcp6RowOwnerPid>(IntPtr.Add(buf, 4 + (int)i * rowSize)));
+        }
+        finally { Marshal.FreeHGlobal(buf); }
+        return rows;
+    }
+
+    // ------------------- components / drivers / agents -------------------
+    private static readonly (string Name, string Display, ComponentType Type)[] CoreServices =
+    {
+        ("BFE", "Base Filtering Engine", ComponentType.WfpProvider),
+        ("MpsSvc", "Windows Defender Firewall", ComponentType.WfpProvider),
+        ("wfplwfs", "WFP Lightweight Filter", ComponentType.NdisFilter),
+        ("tcpip", "TCP/IP Driver", ComponentType.NetworkFilter),
+        ("afd", "Ancillary Function Driver for Winsock", ComponentType.NetworkFilter),
+        ("NetBT", "NetBIOS over TCP/IP", ComponentType.NetworkFilter),
+        ("ndisuio", "NDIS Usermode I/O", ComponentType.NetworkFilter),
+    };
+
+    private void CollectComponents()
+    {
+        _vm.Components.Clear();
+
+        // 1) Real adapters (confirmed) — inventoried in CollectInterfaces
+        foreach (var iface in _vm.Interfaces)
+        {
+            _vm.Components.Add(new Component
+            {
+                Id = "if-" + iface.Id,
+                Name = iface.Name,
+                Vendor = VendorFromDescription(iface.Description),
+                Type = iface.Type == InterfaceKind.Physical ? ComponentType.PhysicalAdapter : ComponentType.VirtualAdapter,
+                Service = "",
+                Driver = iface.Description,
+                Version = "",
+                Status = iface.State,
+                Confidence = ConfidenceLevel.Confirmed,
+            });
+        }
+
+        // Enumerate services + drivers straight from the SCM registry hive (no SCM dependency)
+        var svcText = new List<string>();
+        try
+        {
+            using var root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services");
+            if (root != null)
+            {
+                foreach (var name in root.GetSubKeyNames())
+                {
+                    try
+                    {
+                        using var sub = root.OpenSubKey(name);
+                        if (sub == null) continue;
+                        int type = sub.GetValue("Type") as int? ?? 0;
+                        int start = sub.GetValue("Start") as int? ?? 3;
+                        string group = sub.GetValue("Group") as string ?? "";
+                        string image = Environment.ExpandEnvironmentVariables(sub.GetValue("ImagePath") as string ?? "");
+                        string display = sub.GetValue("DisplayName") as string ?? name;
+                        bool isDriver = type is 1 or 2 or 4;
+
+                        svcText.Add(name);
+                        svcText.Add(display);
+                        if (image.Length > 0) svcText.Add(image);
+
+                        // 2) Core WFP/NDIS stack services + drivers (confirmed)
+                        var core = CoreServices.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+                        if (core.Name != null)
+                        {
+                            _vm.Components.Add(new Component
+                            {
+                                Id = "core-" + core.Name,
+                                Name = core.Display,
+                                Vendor = "Microsoft",
+                                Type = core.Type,
+                                Service = name,
+                                Driver = image,
+                                Version = "",
+                                Status = StartLabel(start),
+                                Confidence = ConfidenceLevel.Confirmed,
+                            });
+                        }
+
+                        // 3) Network filter drivers via Group = NDIS/PNP_TDI (confirmed)
+                        if (isDriver && group is "NDIS" or "PNP_TDI" or "NDISWAN" or "NetService")
+                        {
+                            _vm.Components.Add(new Component
+                            {
+                                Id = "drv-" + name,
+                                Name = string.IsNullOrEmpty(display) ? name : display,
+                                Vendor = VendorFromDescription(display),
+                                Type = group == "NDIS" ? ComponentType.NdisFilter : ComponentType.NetworkFilter,
+                                Service = name,
+                                Driver = image,
+                                Version = "",
+                                Status = StartLabel(start),
+                                Confidence = ConfidenceLevel.Confirmed,
+                            });
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
+
+        // 4) Vendor agent discovery (inferred from running processes/services/drivers)
+        var agents = _agents ??= AgentSignatures.Load();
+        var procNames = new HashSet<string>(_vm.Processes.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+        var allText = string.Join(" ", svcText);
+
+        foreach (var agent in agents)
+        {
+            bool matched = false;
+            foreach (var pat in agent.Patterns)
+            {
+                if (procNames.Any(p => p.Contains(pat, StringComparison.OrdinalIgnoreCase))) { matched = true; break; }
+                if (allText.Contains(pat, StringComparison.OrdinalIgnoreCase)) { matched = true; break; }
+            }
+            if (!matched) continue;
+            _vm.Components.Add(new Component
+            {
+                Id = "agent-" + agent.Name,
+                Name = agent.Name,
+                Vendor = agent.Vendor,
+                Type = agent.ComponentType,
+                Service = "",
+                Driver = "",
+                Version = "",
+                Status = "Detected",
+                Confidence = ConfidenceLevel.Inferred,
+            });
+        }
+    }
+
+    private static string StartLabel(int start) => start switch
+    {
+        0 => "Boot",
+        1 => "System",
+        2 => "Auto",
+        3 => "Manual",
+        4 => "Disabled",
+        _ => "Unknown",
+    };
+
+    private void CollectWfp()
+    {
+        var result = WfpInventory.Collect();
+        if (!result.Ok)
+        {
+            AddEvent(Severity.Info, "WFP", result.Error.Length > 0 ? result.Error : "WFP inventory unavailable.", "", "");
+            return;
+        }
+
+        _vm.WfpObjects.Clear();
+        foreach (var o in result.Objects) _vm.WfpObjects.Add(o);
+
+        _vm.WfpLayers.Clear();
+        foreach (var l in result.Layers) _vm.WfpLayers.Add(l);
+    }
+
+    private string AgentFor(string processName)
+    {
+        if (string.IsNullOrEmpty(processName)) return "";
+        var agents = _agents ??= AgentSignatures.Load();
+        foreach (var a in agents)
+            foreach (var pat in a.Patterns)
+                if (processName.Contains(pat, StringComparison.OrdinalIgnoreCase))
+                    return a.Name;
+        return "";
+    }
+
+    private static string VendorFromDescription(string desc)
+    {
+        if (string.IsNullOrEmpty(desc)) return "—";
+        var d = desc.ToLowerInvariant();
+        if (d.Contains("realtek")) return "Realtek";
+        if (d.Contains("intel")) return "Intel";
+        if (d.Contains("broadcom")) return "Broadcom";
+        if (d.Contains("qualcomm") || d.Contains("atheros")) return "Qualcomm";
+        if (d.Contains("mellanox")) return "NVIDIA (Mellanox)";
+        if (d.Contains("marvell")) return "Marvell";
+        if (d.Contains("microsoft")) return "Microsoft";
+        if (d.Contains("vmware")) return "VMware";
+        if (d.Contains("virtualbox")) return "Oracle";
+        if (d.Contains("cisco")) return "Cisco";
+        if (d.Contains("zscaler")) return "Zscaler";
+        return "—";
     }
 
     // ------------------- active probes -------------------
@@ -676,12 +903,21 @@ public sealed class WindowsTelemetryProvider : ITelemetryProvider
 
     private static bool IsPrivate(IPAddress ip)
     {
-        if (ip.AddressFamily != AddressFamily.InterNetwork) return false;
-        var b = ip.GetAddressBytes();
-        return b[0] == 10
-            || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
-            || (b[0] == 192 && b[1] == 168)
-            || (b[0] == 169 && b[1] == 254);
+        if (ip.AddressFamily == AddressFamily.InterNetwork)
+        {
+            var b = ip.GetAddressBytes();
+            return b[0] == 10
+                || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
+                || (b[0] == 192 && b[1] == 168)
+                || (b[0] == 169 && b[1] == 254);
+        }
+        if (ip.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            var b = ip.GetAddressBytes();
+            if ((b[0] & 0xFE) == 0xFC) return true; // fc00::/7 ULA
+            if (b[0] == 0xFE && (b[1] & 0xC0) == 0x80) return true; // fe80::/10 link-local
+        }
+        return false;
     }
 
     private static double StdDev(IEnumerable<double> vals)

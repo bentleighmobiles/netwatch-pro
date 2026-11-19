@@ -4,9 +4,10 @@
 and diagnostics console with the visual language of 1980s/90s telecommunications
 test equipment.
 
-Milestone 2 delivers the instrument console driven by **real Windows telemetry**
-(CPU/RAM/disk, adapters, throughput, processes, TCP/UDP connections, routes, DNS and
-active latency probes), with a one-click fallback to **clearly-labelled simulated data**.
+Milestone 3 adds **WFP & driver intelligence** on top of the real Windows telemetry:
+live WFP provider/sublayer/callout/layer inventory, real network driver & component
+inventory, and evidence-based vendor agent discovery (GSA, Zscaler, Umbrella, …) —
+still with a one-click fallback to **clearly-labelled simulated data**.
 Collection never lives in the UI — a pluggable `ITelemetryProvider` feeds the shared
 `MainViewModel`, so SIMULATED ↔ LIVE swaps happen without touching a single view.
 
@@ -60,8 +61,10 @@ src/NetwatchPro/
 │   └── TelemetryContracts.cs       UI-facing data entities + label helpers
 ├── Services/
 │   ├── ITelemetryProvider.cs       Provider seam (SIMULATED / LIVE / UNAVAILABLE)
-│   ├── WindowsTelemetryProvider.cs Real collectors (Milestone 2)
+│   ├── WindowsTelemetryProvider.cs Real collectors (Milestones 2–3)
 │   ├── WindowsNative.cs            Kernel/iphlpapi P/Invoke (CPU/RAM/disk, TCP/UDP)
+│   ├── WfpInventory.cs             WFP provider/sublayer/callout/layer enum (fwpuclnt)
+│   ├── AgentSignatures.cs          Vendor agent signature catalogue loader
 │   ├── SimulatedTelemetryProvider  Simulated collector (random-walk dynamics)
 │   └── SettingsService.cs          JSON settings persistence
 ├── ViewModels/
@@ -73,7 +76,8 @@ src/NetwatchPro/
 ├── FontLoader.cs                   Installs bundled Share Tech Mono
 └── Assets/
     ├── Fonts/ShareTechMono-Regular.ttf   (OFL licence, bundled)
-    └── Geo/world-110m.json               (Natural Earth 110m land, public domain)
+    ├── Geo/world-110m.json               (Natural Earth 110m land, public domain)
+    └── agent-signatures.json             (vendor-neutral agent discovery rules)
 ```
 
 **Architecture rule (assignment §7):** the UI consumes a stable shared telemetry
@@ -104,8 +108,14 @@ header badge + every panel reflect the current source state:
 - **Throughput** — per-interface `GetIPStatistics` byte deltas (IPv4+IPv6), summed
   and bucketed by interface type.
 - **Processes** — `Process.GetProcesses()` (PID, name, executable, start time).
-- **Connections** — `GetExtendedTcpTable` / `GetExtendedUdpTable` with owner PIDs;
-  each flow carries process attribution, endpoint, interface, route and category.
+- **Connections** — `GetExtendedTcpTable` / `GetExtendedUdpTable` (IPv4 + IPv6) with
+  owner PIDs; each flow carries process attribution, endpoint, interface, route and
+  category, plus the matched vendor agent when the owning process is a known client.
+- **WFP inventory** — `FwpmEngineOpen0` + provider/sublayer/callout/layer enumeration
+  (real, admin-gated; degrades to an event when not elevated).
+- **Drivers & components** — real network adapter + NDIS/filter-driver inventory from
+  the SCM registry hive, and evidence-based vendor agent discovery from running
+  processes/services/drivers (INFERRED).
 - **Latency / jitter / loss / DNS / connect time** — active probes: ICMP ping to the
   default gateway (fallback 1.1.1.1), DNS resolution timing, TCP connect timing.
 - **CPU temperature** — not read in this milestone; displayed as `N/A` (honest).
@@ -113,15 +123,17 @@ header badge + every panel reflect the current source state:
 Every collector degrades to a diagnostic event on failure rather than fabricating
 data. A fatal provider failure at startup falls back to SIMULATED automatically.
 
-### Known limitations (Milestone 2)
+### Known limitations (Milestone 3)
 
-- TCP/UDP enumeration is **IPv4 only** (IPv6 connection tables are a later milestone).
-- Per-flow byte rates are not measured (0 B/s) — that requires TCP estats/ETW (M3).
+- Per-flow byte rates are not measured (0 B/s) — that requires TCP estats/ETW (next).
 - Reverse-DNS hostnames are not resolved; the "destination host" column shows the IP.
-- Traffic category is derived from interface type + private-address heuristics
-  (INFERRED) — no WFP/component evidence yet, so WEB PROXY/SWG is always empty.
-- WFP objects, component/driver inventory and packet capture remain **UNAVAILABLE**
-  (empty) until Milestones 3–4. Adapter inventory is not hot-reloaded mid-run.
+- Traffic category is still interface-type + private-address heuristics (INFERRED) —
+  WFP filter-level attribution and WEB PROXY/SWG classification need ETW correlation.
+- WFP enumeration requires elevation; unelevated it degrades to a diagnostic event.
+- WFP **filters** (`FWPM_FILTER0`) are not enumerated yet — providers, sublayers,
+  callouts and layers are. Full filter inventory is the next pass.
+- World-map destination dots are still hash-placed (no GeoIP database bundled yet).
+- Adapter inventory is not hot-reloaded mid-run.
 
 ---
 
@@ -185,7 +197,7 @@ data-source selection).
 | Milestone | Collector | Elevation |
 |---|---|---|
 | 2 — Windows telemetry ✅ | CPU/RAM/disk, adapters/throughput, processes, connections (TCP/UDP), routes, DNS, active probes | none |
-| 3 — WFP & drivers | WFP inventory (`FwpmEngineOpen`), driver inventory (SetupAPI), ETW correlation | **admin** in many cases |
+| 3 — WFP & drivers ✅ (partial) | WFP provider/sublayer/callout/layer inventory, driver/NDIS-filter inventory, vendor agent discovery; ETW correlation + filter enum still open | **admin** for WFP |
 | 4 — Advanced diagnostics | PktMon, ETL→PCAPNG, drop analysis | **admin** |
 
 The UI already surfaces `UNAVAILABLE` / `Permission Denied` honestly and never
@@ -197,19 +209,20 @@ silently downgrades a claim.
 
 - ✅ `dotnet build -c Release` — **0 warnings, 0 errors** (x64, `net8.0-windows`).
 - ✅ Self-contained `win-x64` publish produces `NetwatchPro.exe`.
-- ⚠️ Compile-verified on Linux; live collectors **require a Windows launch** to
-  confirm runtime behaviour (P/Invoke marshalling, probe cadence, layout).
+- ⚠️ Compile-verified on Linux; the WFP P/Invoke marshalling and driver registry reads
+  **require a Windows launch** to confirm runtime behaviour (struct layouts matched to
+  MSDN; a misbehaving WFP struct degrades to an event, not a crash).
 
 Roadmap (assignment §13): **2** real system/network telemetry ✅ → **3** WFP +
-driver intelligence → **4** PktMon/packet capture + ETL/PCAPNG → **5** baselines,
-anomaly detection, explainable-confidence recommendations.
+driver intelligence (providers/sublayers/callouts/layers + drivers + agents done;
+filters + ETW next) → **4** PktMon/packet capture → **5** baselines/anomaly detection.
 
 ---
 
 ## 8. Attribution confidence (assignment §14)
 
 Every attribution is labelled `CONFIRMED` / `INFERRED` / `UNKNOWN` and colour-coded
-green/amber/grey. Milestone 2 classifies flows from interface type and private-address
-evidence only, so route/category is `INFERRED`; anything without evidence (component,
-WFP layer, driver) stays blank. A single flow can traverse multiple components and
-layers — the UI shows the observed chain rather than forcing one driver answer.
+green/amber/grey. Milestone 3 classifies flows from interface type + private-address
+evidence (route/category = `INFERRED`) and attributes a flow's component to a vendor
+agent only when the owning process matches a discovery signature (`INFERRED`). Drivers
+and WFP objects are `CONFIRMED` inventory; anything without evidence stays blank.

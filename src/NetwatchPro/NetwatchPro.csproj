@@ -24,6 +24,7 @@
   <ItemGroup>
     <Resource Include="Assets\Fonts\ShareTechMono-Regular.ttf" />
     <Resource Include="Assets\Geo\world-110m.json" />
+    <Resource Include="Assets\agent-signatures.json" />
   </ItemGroup>
 
 </Project>
