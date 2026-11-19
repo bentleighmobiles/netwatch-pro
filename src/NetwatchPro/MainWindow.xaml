@@ -38,7 +38,7 @@
                                        VerticalAlignment="Bottom" Margin="10,0,0,4" FontSize="10"/>
                             <Border Background="#1A1414" BorderBrush="#3A4458" BorderThickness="1" CornerRadius="2"
                                     Padding="7,2" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="SIMULATED DATA" Foreground="#FF8C2E" FontSize="10" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SourceLabel}" Foreground="{Binding SourceBrush}" FontSize="10" FontWeight="Bold"/>
                             </Border>
                         </StackPanel>
 

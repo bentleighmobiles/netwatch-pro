@@ -9,7 +9,7 @@ namespace NetwatchPro.Services;
 /// realistic random-walk dynamics, vendor-flavoured component inventory, WFP
 /// objects, flows and occasional diagnostic events. No real collection occurs.
 /// </summary>
-public sealed class SimulatedTelemetryProvider : IDisposable
+public sealed class SimulatedTelemetryProvider : ITelemetryProvider
 {
     private readonly MainViewModel _vm;
     private readonly Random _rng = new();
@@ -44,8 +44,12 @@ public sealed class SimulatedTelemetryProvider : IDisposable
         };
     }
 
+    public SourceState Source => SourceState.Simulated;
+
     public void Start()
     {
+        _vm.ResetTelemetry();
+        _vm.GlobalSource = SourceState.Simulated;
         Seed();
         ApplyInterval();
         _timer.Start();

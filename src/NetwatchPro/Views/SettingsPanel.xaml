@@ -14,6 +14,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- operating mode -->
@@ -79,8 +80,18 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- behaviour -->
+                <!-- data source -->
                 <StackPanel Grid.Row="2" Margin="0,12,0,0" Grid.ColumnSpan="2">
+                    <TextBlock Style="{StaticResource H2}" Text="DATA SOURCE"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <RadioButton Content="LIVE (real Windows telemetry)" IsChecked="{Binding DataSourceIndex, Converter={StaticResource Equals}, ConverterParameter=0}" Margin="0,0,16,0"/>
+                        <RadioButton Content="SIMULATED (demo data)" IsChecked="{Binding DataSourceIndex, Converter={StaticResource Equals}, ConverterParameter=1}"/>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Faint}" Text="LIVE reads CPU/RAM/disk, adapters, throughput, processes, TCP/UDP connections and active latency probes. No admin required." TextWrapping="Wrap" Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- behaviour -->
+                <StackPanel Grid.Row="3" Margin="0,12,0,0" Grid.ColumnSpan="2">
                     <TextBlock Style="{StaticResource H2}" Text="BEHAVIOUR &amp; PRIVACY"/>
                     <CheckBox Content="SOUND EFFECTS (disabled by default)" IsChecked="{Binding SoundEnabled}" Margin="0,4,0,0"/>
                     <CheckBox Content="START IN LIGHT MONITOR" IsChecked="{Binding StartInLightMonitor}" Margin="0,3,0,0"/>
@@ -89,7 +100,7 @@
                 </StackPanel>
 
                 <!-- classification -->
-                <StackPanel Grid.Row="3" Margin="0,12,0,0" Grid.ColumnSpan="2">
+                <StackPanel Grid.Row="4" Margin="0,12,0,0" Grid.ColumnSpan="2">
                     <TextBlock Style="{StaticResource H2}" Text="TRAFFIC CLASSIFICATION (USER-CONFIGURABLE)"/>
                     <TextBlock Style="{StaticResource Faint}" Text="Vendor-neutral rules. Milestone 1 ships example mappings only — no vendor logic is hardcoded into the core." TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">

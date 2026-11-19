@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using NetwatchPro.Models;
 using NetwatchPro.Services;
@@ -9,7 +10,7 @@ namespace NetwatchPro;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm;
-    private readonly SimulatedTelemetryProvider _provider;
+    private ITelemetryProvider _provider;
     private ScreensaverWindow? _saver;
 
     public MainWindow()
@@ -18,8 +19,7 @@ public partial class MainWindow : Window
         var settings = SettingsService.Load();
         SettingsService.ApplyToViewModel(_vm, settings);
 
-        _provider = new SimulatedTelemetryProvider(_vm);
-        _provider.Start();           // seed simulated telemetry synchronously before first render
+        _provider = CreateAndStartProvider();
 
         DataContext = _vm;
         InitializeComponent();
@@ -28,11 +28,50 @@ public partial class MainWindow : Window
         Closed += OnClosed;
     }
 
+    private ITelemetryProvider CreateAndStartProvider()
+    {
+        if (_vm.DataSourceIndex == 0) // LIVE
+        {
+            try
+            {
+                var live = new WindowsTelemetryProvider(_vm);
+                live.Start();
+                return live;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[NETWATCH PRO] Live provider failed ({ex.Message}); falling back to simulated.");
+                _vm.ResetTelemetry();
+            }
+        }
+
+        var sim = new SimulatedTelemetryProvider(_vm);
+        sim.Start();
+        return sim;
+    }
+
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(MainViewModel.Mode)) return;
-        if (_vm.Mode == OperatingMode.Screensaver) OpenScreensaver();
-        else if (_saver != null) CloseScreensaver();
+        if (e.PropertyName == nameof(MainViewModel.Mode))
+        {
+            if (_vm.Mode == OperatingMode.Screensaver) OpenScreensaver();
+            else if (_saver != null) CloseScreensaver();
+        }
+        else if (e.PropertyName == nameof(MainViewModel.DataSourceIndex))
+        {
+            SwapProvider();
+        }
+    }
+
+    private void SwapProvider()
+    {
+        bool wantLive = _vm.DataSourceIndex == 0;
+        bool isLive = _provider.Source == SourceState.Live;
+        if (wantLive == isLive) return;
+
+        _provider.Dispose();
+        _vm.ResetTelemetry();
+        _provider = CreateAndStartProvider();
     }
 
     private void OpenScreensaver()

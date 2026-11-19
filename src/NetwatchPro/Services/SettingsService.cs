@@ -23,6 +23,7 @@ public sealed class Settings
     public bool SoundEnabled { get; set; }
     public bool StartInLightMonitor { get; set; } = true;
     public bool CaptureAutoCleanup { get; set; } = true;
+    public int DataSourceIndex { get; set; } // 0 = LIVE, 1 = SIMULATED
 }
 
 public static class SettingsService
@@ -77,6 +78,7 @@ public static class SettingsService
         SoundEnabled = vm.SoundEnabled,
         StartInLightMonitor = vm.StartInLightMonitor,
         CaptureAutoCleanup = vm.CaptureAutoCleanup,
+        DataSourceIndex = vm.DataSourceIndex,
     };
 
     public static void ApplyToViewModel(MainViewModel vm, Settings s)
@@ -96,6 +98,7 @@ public static class SettingsService
         vm.SoundEnabled = s.SoundEnabled;
         vm.StartInLightMonitor = s.StartInLightMonitor;
         vm.CaptureAutoCleanup = s.CaptureAutoCleanup;
+        vm.DataSourceIndex = Clamp(s.DataSourceIndex, 0, MainViewModel.DataSources.Length - 1);
     }
 
     private static int Clamp(int v, int min, int max) => Math.Clamp(v, min, max);

@@ -13,5 +13,9 @@ publish/
 .DS_Store
 Thumbs.db
 
+# Build artifacts
+*.zip
+*.tar.gz
+
 # Reference material (assignment screenshots — not source)
 reference/

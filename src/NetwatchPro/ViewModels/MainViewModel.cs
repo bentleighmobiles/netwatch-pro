@@ -13,12 +13,12 @@ public sealed class MainViewModel : ObservableObject
     public const int HistoryCap = 2880;
 
     // ---------------- header ----------------
-    public string ComputerName { get; } = "NETWATCH-01";
-    public string WinVersion { get; } = "Windows 11 Pro";
-    public string WinBuild { get; } = "10.0.22631.3958";
-    public string Architecture { get; } = "x64";
-    public string RegionTimeZone { get; } = "Australia/Melbourne (UTC+10)";
-    public string UserName { get; } = @"NETWATCH\operator";
+    public string ComputerName { get; set; } = "NETWATCH-01";
+    public string WinVersion { get; set; } = "Windows 11 Pro";
+    public string WinBuild { get; set; } = "10.0.22631.3958";
+    public string Architecture { get; set; } = "x64";
+    public string RegionTimeZone { get; set; } = "Australia/Melbourne (UTC+10)";
+    public string UserName { get; set; } = @"NETWATCH\operator";
     public string ActiveAdapter { get; set; } = "Ethernet 2";
 
     private string _timeDate = DateTime.Now.ToString("ddd yyyy-MM-dd HH:mm:ss");
@@ -29,8 +29,31 @@ public sealed class MainViewModel : ObservableObject
     public bool IsHealthy => _health == "NOMINAL";
     public bool IsDegraded => _health != "NOMINAL";
 
-    public SourceState GlobalSource { get; } = SourceState.Simulated;
-    public string SourceLabel => "SIMULATED DATA";
+    private SourceState _globalSource = SourceState.Simulated;
+    public SourceState GlobalSource
+    {
+        get => _globalSource;
+        set
+        {
+            if (Set(ref _globalSource, value))
+            {
+                OnPropertyChanged(nameof(SourceLabel));
+                OnPropertyChanged(nameof(SourceBrush));
+            }
+        }
+    }
+    public string SourceLabel => _globalSource switch
+    {
+        SourceState.Live => "LIVE DATA",
+        SourceState.Unavailable => "DATA UNAVAILABLE",
+        _ => "SIMULATED DATA",
+    };
+    public string SourceBrush => _globalSource switch
+    {
+        SourceState.Live => "#5CFF6A",
+        SourceState.Unavailable => "#FF3B4E",
+        _ => "#FF8C2E",
+    };
 
     private string _uptime = "0d 00:00:00";
     public string Uptime { get => _uptime; set => Set(ref _uptime, value); }
@@ -151,6 +174,15 @@ public sealed class MainViewModel : ObservableObject
     public static string[] RefreshRates { get; } = { "1s", "5s", "10s", "30s", "MANUAL" };
     public static string[] TrafficFilters { get; } = { "ALL", "PRIVATE", "PROXY", "DIRECT", "OTHER" };
     public static string[] Sections { get; } = { "OVERVIEW", "TRAFFIC", "DRIVERS", "WFP", "CONNECTIONS", "ISSUES", "ANALYSIS", "SETTINGS" };
+    public static string[] DataSources { get; } = { "LIVE", "SIMULATED" };
+
+    private int _dataSourceIndex;
+    public int DataSourceIndex
+    {
+        get => _dataSourceIndex;
+        set { if (Set(ref _dataSourceIndex, value)) OnPropertyChanged(nameof(DataSourceLabel)); }
+    }
+    public string DataSourceLabel => DataSources[Math.Clamp(_dataSourceIndex, 0, DataSources.Length - 1)];
 
     private int _timeRangeIndex = 2;
     public int TimeRangeIndex
@@ -273,6 +305,23 @@ public sealed class MainViewModel : ObservableObject
         StartCaptureCommand = new RelayCommand(_ => IsCapturing = true);
         StopCaptureCommand = new RelayCommand(_ => IsCapturing = false);
         ExportCaptureCommand = new RelayCommand(_ => { /* simulated export (Milestone 1) */ });
+    }
+
+    /// <summary>Clear all telemetry collections (used when switching data source).</summary>
+    public void ResetTelemetry()
+    {
+        Interfaces.Clear();
+        Flows.Clear();
+        Components.Clear();
+        WfpObjects.Clear();
+        WfpLayers.Clear();
+        Events.Clear();
+        Processes.Clear();
+        TrafficHistory.Clear();
+        LatencyHistory.Clear();
+        AlertCount = 0;
+        AlertActive = false;
+        OverallHealth = "NOMINAL";
     }
 
     /// <summary>Push one traffic sample and trim to the bounded history cap.</summary>
